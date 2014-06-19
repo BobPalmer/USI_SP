@@ -16,31 +16,80 @@ namespace AirbagTools
         [KSPField]
         public String deployAnimationName = "Deploy";
 
-        private bool _isDeployed;
+        [KSPField(isPersistant = true)]
+        public bool isCharged = true;
+        [KSPField(isPersistant = true)]
+        public bool isDeployed = false;
 
-        [KSPAction("Toggle")]
-        public void ToggleAction(KSPActionParam param)
+        private StartState _state;
+
+        [KSPAction("Inflate")]
+        public void InflateAction(KSPActionParam param)
         {
-            ToggleAirbags();
+            InflateAirbags();
+        }
+
+        [KSPAction("Deflate")]
+        public void DeflateAction(KSPActionParam param)
+        {
+            DeflateAirbags();
+        }
+
+        [KSPAction("Disconnect")]
+        public void DisconnectAction(KSPActionParam param)
+        {
+            DisconnectAirbags();
+        }
+        public void DisconnectAirbags()
+        {
+            part.decouple(200f);
         }
 
 
-        [KSPEvent(guiActive = true, guiName = "Toggle Airbags", active = true, externalToEVAOnly = true, guiActiveEditor = true)]
-        public void ToggleAirbags()
+        [KSPEvent(guiName = "Inflate Airbags", guiActiveEditor=true)]
+        public void InflateAirbags()
         {
-            if (_isDeployed)
+            if (!isDeployed)
             {
-                _isDeployed = false;
-                DeployAnimation[deployAnimationName].speed = -1;
+                if (isCharged || _state == StartState.Editor)
+                {
+                    isCharged = false;
+                    isDeployed = true;
+                    DeployAnimation[deployAnimationName].speed = 1;
+                    DeployAnimation.Play(deployAnimationName);
+                    ToggleEvent("DeflateAirbags", true);
+                    ToggleEvent("InflateAirbags", false);
+                }
+            }
+        }
+
+        [KSPEvent(guiName = "Deflate Airbags", guiActiveEditor = false)]
+        public void DeflateAirbags()
+        {
+            if (isDeployed)
+            {
+                isDeployed = false;
+                DeployAnimation[deployAnimationName].speed = -.25f;
                 DeployAnimation[deployAnimationName].time = DeployAnimation[deployAnimationName].length;
                 DeployAnimation.Play(deployAnimationName);
+                ToggleEvent("DeflateAirbags", false);
+                Events["RechargeAirbags"].active = true;
             }
-            else
-            {
-                _isDeployed = true;
-                DeployAnimation[deployAnimationName].speed = 1;
-                DeployAnimation.Play(deployAnimationName);
-            }
+        }
+        
+        [KSPEvent(guiName = "Recharge Airbags", guiActive = false, externalToEVAOnly = true, guiActiveEditor = true, active=false, guiActiveUnfocused=true, unfocusedRange=3.0f)]
+        public void RechargeAirbags()
+        {
+            isCharged = true;
+            Events["RechargeAirbags"].active = false;
+            ToggleEvent("InflateAirbags", true);
+        }
+        private void ToggleEvent(string eventName, bool state)
+        {
+            Events[eventName].active = state;
+            Events[eventName].externalToEVAOnly = state;
+            Events[eventName].guiActiveEditor = state;
+            Events[eventName].guiActive = state;
         }
 
         public Animation DeployAnimation
@@ -52,7 +101,7 @@ namespace AirbagTools
         }
 
 
-        public override void OnFixedUpdate()
+        public void OnFixedUpdate()
         {
             if (part.checkLanded())
             {
@@ -80,22 +129,33 @@ namespace AirbagTools
 
         public override void OnLoad(ConfigNode node)
         {
-            part.force_activate();
+            Setup();
         }
 
         public override void OnStart(StartState state)
         {
-            part.force_activate();
+            _state = state;
+            Setup();
         }
 
-        public override void OnAwake()
+        private void Setup()
         {
-            part.force_activate();
-        }
-
-        public override void OnInitialize()
-        {
-            part.force_activate();
+            print("Deployed: " + isDeployed);
+            print("Charged: " + isCharged);
+            if (vessel != null)
+            {
+                part.force_activate();
+                if (isDeployed)
+                {
+                    ToggleEvent("DeflateAirbags", true);
+                    ToggleEvent("InflateAirbags", false);
+                }
+                else
+                {
+                    ToggleEvent("DeflateAirbags", false);
+                    ToggleEvent("InflateAirbags", true);
+                }
+            }
         }
     }
 }
