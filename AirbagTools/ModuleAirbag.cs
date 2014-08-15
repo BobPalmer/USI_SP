@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using UnityEngine;
 
 namespace AirbagTools
@@ -103,13 +99,20 @@ namespace AirbagTools
 
         public void OnFixedUpdate()
         {
-            if (part.checkLanded())
+            try
             {
-                Dampen();   
+                if (part.checkLanded())
+                {
+                    Dampen();
+                }
+                if (part.Landed)
+                {
+                    Dampen();
+                }
             }
-            if (part.Landed)
+            catch (Exception ex)
             {
-                Dampen();
+                print("[AB] Error in OnFixedUpdate - " + ex.Message);
             }
         }
 
