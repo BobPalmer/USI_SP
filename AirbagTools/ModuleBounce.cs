@@ -12,17 +12,13 @@ public class ModuleBounce : PartModule
 
     public override void OnStart(PartModule.StartState state)
     {
-        //Debug.LogError("ModuleBounce OnStart", gameObject);
-        //ModuleBounceCollider bounce = part.collider.GetComponent<ModuleBounceCollider>();
         ModuleBounceCollider bounce = gameObject.GetComponent<ModuleBounceCollider>();
 
         if (bounce == null)
         {
-            //bounce = part.collider.gameObject.AddComponent<ModuleBounceCollider>();
             bounce = gameObject.AddComponent<ModuleBounceCollider>();
             bounce.bounciness = bounciness;
             bounce.part = part;
-            //Debug.LogError("ModuleBounce " + part.collider.gameObject.name);
         }
     }
 }

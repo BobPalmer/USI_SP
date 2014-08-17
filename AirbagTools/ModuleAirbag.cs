@@ -14,6 +14,7 @@ namespace AirbagTools
 
         [KSPField(isPersistant = true)]
         public bool isCharged = true;
+
         [KSPField(isPersistant = true)]
         public bool isDeployed = false;
 
@@ -121,7 +122,7 @@ namespace AirbagTools
             if (vessel.srfSpeed > dampenSpeed
                 || vessel.horizontalSrfSpeed > dampenSpeed)
             {
-                print("Dampening...");
+                //print("Dampening...");
                 foreach (var p in vessel.parts)
                 {
                     p.Rigidbody.angularVelocity *= dampenFactor;
